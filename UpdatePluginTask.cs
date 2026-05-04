@@ -7,6 +7,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using MediaBrowser.Common;
 using MediaBrowser.Model.Activity;
 using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Tasks;
@@ -25,11 +26,13 @@ namespace EmbyMemoryCleaner
 
         private readonly ILogger _logger;
         private readonly IActivityManager _activityManager;
+        private readonly IApplicationHost _applicationHost;
 
-        public UpdatePluginTask(ILogManager logManager, IActivityManager activityManager)
+        public UpdatePluginTask(ILogManager logManager, IActivityManager activityManager, IApplicationHost applicationHost)
         {
             _logger = logManager.GetLogger("MemoryCleaner.UpdatePluginTask");
             _activityManager = activityManager;
+            _applicationHost = applicationHost;
         }
 
         public string Name => "Update Memory Cleaner";
@@ -163,6 +166,7 @@ namespace EmbyMemoryCleaner
                     _logger.Info($"Plugin updated to {latest}. RESTART Emby Server to load the new version.");
                     WriteActivity("Memory Cleaner: 更新完成，请重启 Emby Server",
                         $"已下载 v{latest} 到插件目录，重启 Emby Server 后生效。", LogSeverity.Warn);
+                    try { _applicationHost?.NotifyPendingRestart(); } catch (Exception nex) { _logger.Debug("NotifyPendingRestart failed: " + nex.Message); }
                     progress?.Report(100);
                 }
             }
