@@ -25,7 +25,7 @@
 
             <div class="inputContainer">
                 <input is="emby-input" type="number" id="txtIntervalMinutes" min="1" max="120" step="1" label="清理间隔（分钟） / Interval (minutes)" />
-                <div class="fieldDescription">范围 1 - 120，建议 5 - 15。</div>
+                <div class="fieldDescription">范围 1 - 120，默认 30。内存增长较快可填 5 - 15，低频维护可填 60。</div>
             </div>
 
             <div class="checkboxContainer checkboxContainer-withDescription">
@@ -34,7 +34,7 @@
                     <span>有人在播时跳过本次清理 (Skip when playing)</span>
                 </label>
                 <div class="fieldDescription checkboxFieldDescription">
-                    检测到任何会话正在播放时跳过本次定时清理，避免 GC STW 引起播放卡顿。手动「立即清理」不受此设置影响。
+                    检测到任何会话正在播放（包含转码、直出、直传）时则跳过本次定时清理，避免 GC STW 引起播放卡顿。手动「立即清理」不受此设置影响。
                 </div>
             </div>
 
