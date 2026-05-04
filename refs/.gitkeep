@@ -1,0 +1,6 @@
+# 把以下 3 个 DLL 从你 Emby Server 安装目录的 system/ 文件夹复制到此处：
+#   MediaBrowser.Common.dll
+#   MediaBrowser.Controller.dll
+#   MediaBrowser.Model.dll
+#
+# 详细说明见上一级 README.md

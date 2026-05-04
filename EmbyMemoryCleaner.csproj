@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <AssemblyName>EmbyMemoryCleaner</AssemblyName>
+    <RootNamespace>EmbyMemoryCleaner</RootNamespace>
+    <Version>1.0.1.0</Version>
+    <FileVersion>1.0.1.0</FileVersion>
+    <Nullable>disable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- 这三个 DLL 需要从你自己的 Emby Server 安装目录复制到 refs/ 文件夹下：
+         Windows: C:\Users\<你>\AppData\Roaming\Emby-Server\system\
+         Docker:  /system/  里的同名文件
+         Linux:   /opt/emby-server/system/
+    -->
+    <Reference Include="MediaBrowser.Common">
+      <HintPath>refs\MediaBrowser.Common.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="MediaBrowser.Controller">
+      <HintPath>refs\MediaBrowser.Controller.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="MediaBrowser.Model">
+      <HintPath>refs\MediaBrowser.Model.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Configuration\configPage.html" />
+    <EmbeddedResource Include="Configuration\configPage.js" />
+    <EmbeddedResource Include="Images\thumb.png" />
+  </ItemGroup>
+
+</Project>

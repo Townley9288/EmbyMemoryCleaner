@@ -1,0 +1,62 @@
+﻿<div is="emby-scroller" class="view flex flex-direction-column scrollFrameY flex-grow" data-horizontal="false" data-forcescrollbar="true" data-centerfocus="true" data-bindheader="true" data-controller="__plugin/memorycleanerjs" data-title="Memory Cleaner">
+    <div class="scrollSlider flex-grow flex-direction-column padded-left padded-left-page padded-right padded-top-page padded-bottom-page">
+
+        <form class="memoryCleanerConfigForm auto-center padded-top">
+
+            <div class="verticalSection" style="margin-bottom:1.5em;">
+                <h2 class="sectionTitle">Memory Cleaner</h2>
+                <p style="opacity:.85;line-height:1.5;">
+                    周期性触发完整 GC + LOH 压缩 + 工作集释放，缓解 Emby 长时间运行导致的内存膨胀。
+                </p>
+                <p style="opacity:.7;font-size:.9em;">
+                    源自 sjtuross/StrmAssistant 的 MemoryCleaner 模块，独立 GUID，与 StrmAssistant / StrmAssistantPro 不冲突。
+                </p>
+            </div>
+
+            <div class="checkboxContainer checkboxContainer-withDescription">
+                <label>
+                    <input is="emby-checkbox" type="checkbox" id="chkEnableMemoryCleanup" />
+                    <span>启用周期内存清理 (Enable periodic cleanup)</span>
+                </label>
+                <div class="fieldDescription checkboxFieldDescription">
+                    勾选后按下方间隔自动执行 GC + LOH 压缩 + 工作集释放。
+                </div>
+            </div>
+
+            <div class="inputContainer">
+                <input is="emby-input" type="number" id="txtIntervalMinutes" min="1" max="120" step="1" label="清理间隔（分钟） / Interval (minutes)" />
+                <div class="fieldDescription">范围 1 - 120，建议 5 - 15。</div>
+            </div>
+
+            <div style="margin-top:1.5em;">
+                <button is="emby-button" type="submit" class="raised button-submit block">
+                    <span>保存 (Save)</span>
+                </button>
+            </div>
+
+        </form>
+
+        <div class="verticalSection auto-center padded-top" style="margin-top:2em;">
+            <h2 class="sectionTitle">运行状态 (Status)</h2>
+            <div style="display:grid;grid-template-columns:auto 1fr;gap:.4em 1.5em;font-size:.95em;line-height:1.6;">
+                <div style="opacity:.7;">当前托管内存:</div>
+                <div><span class="mc-current-managed">--</span> MB</div>
+                <div style="opacity:.7;">当前进程 RSS:</div>
+                <div><span class="mc-current-rss">--</span> MB</div>
+                <div style="opacity:.7;">上次清理时间:</div>
+                <div><span class="mc-last-time">尚未运行</span></div>
+                <div style="opacity:.7;">上次释放（托管）:</div>
+                <div><span class="mc-last-managed-freed">--</span> MB</div>
+                <div style="opacity:.7;">上次释放（RSS）:</div>
+                <div><span class="mc-last-rss-freed">--</span> MB</div>
+                <div style="opacity:.7;">使用方法:</div>
+                <div><span class="mc-last-method">--</span></div>
+            </div>
+            <div style="margin-top:1em;">
+                <button is="emby-button" type="button" class="raised mc-btn-refresh">
+                    <span>刷新 (Refresh)</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

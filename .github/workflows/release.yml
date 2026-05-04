@@ -1,0 +1,93 @@
+name: Build & Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to build (e.g. 1.0.1.0). Leave empty to use csproj value.'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 6
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '6.0.x'
+
+      - name: Download Emby reference DLLs
+        run: |
+          mkdir -p refs
+          # 从 Emby Server Linux x64 发行包提取 system/*.dll
+          # 注意：URL 中的版本号和实际目标 ABI 应保持一致 (manifest.json 中的 targetAbi)
+          EMBY_VERSION="4.9.0.34"
+          curl -fL -o emby.tar.gz "https://github.com/MediaBrowser/Emby.Releases/releases/download/${EMBY_VERSION}/embyserver-linux-x64-${EMBY_VERSION}.tgz"
+          tar -xzf emby.tar.gz
+          cp emby-server/system/MediaBrowser.Common.dll refs/
+          cp emby-server/system/MediaBrowser.Controller.dll refs/
+          cp emby-server/system/MediaBrowser.Model.dll refs/
+          ls -la refs/
+
+      - name: Determine version
+        id: version
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          elif [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            VERSION="${GITHUB_REF#refs/tags/v}"
+          else
+            VERSION=$(grep -oP '<Version>\K[^<]+' EmbyMemoryCleaner.csproj)
+          fi
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Building version: ${VERSION}"
+
+      - name: Build
+        run: |
+          dotnet build -c Release \
+            -p:Version=${{ steps.version.outputs.version }} \
+            -p:FileVersion=${{ steps.version.outputs.version }} \
+            --no-incremental
+
+      - name: Compute MD5
+        id: md5
+        run: |
+          MD5=$(md5sum bin/Release/net6.0/EmbyMemoryCleaner.dll | awk '{print $1}')
+          echo "md5=${MD5}" >> "$GITHUB_OUTPUT"
+          echo "MD5: ${MD5}"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: EmbyMemoryCleaner-${{ steps.version.outputs.version }}
+          path: bin/Release/net6.0/EmbyMemoryCleaner.dll
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: v${{ steps.version.outputs.version }}
+          body: |
+            ## EmbyMemoryCleaner v${{ steps.version.outputs.version }}
+
+            **MD5**: `${{ steps.md5.outputs.md5 }}`
+
+            ### Install
+
+            Download `EmbyMemoryCleaner.dll` and copy it to your Emby `plugins/` directory, then restart Emby Server.
+
+            See [README](https://github.com/${{ github.repository }}#readme) for full instructions.
+          files: bin/Release/net6.0/EmbyMemoryCleaner.dll
+          draft: false
+          prerelease: false

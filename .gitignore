@@ -1,0 +1,47 @@
+# Build output
+bin/
+obj/
+
+# IDE
+.vs/
+.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Rider
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs / debug artifacts
+*.log
+*.pdb
+
+# Emby reference DLLs are NOT redistributable.
+# Each developer must place their own copy in refs/ from their Emby Server install.
+# CI obtains them from Emby's official release archive (see .github/workflows/release.yml).
+refs/*.dll
+
+# Keep folder + readme
+!refs/.gitkeep
+!refs/README.md
+
+# Local secrets / config
+*.local
+secrets.json
+
+# Copilot personal instructions (per-developer)
+.github/copilot-instructions.md
+
+# NuGet
+*.nupkg
+.nuget/
+packages/
+
+# Test output
+TestResults/
+coverage/
