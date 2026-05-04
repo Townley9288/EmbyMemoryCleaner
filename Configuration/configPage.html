@@ -28,6 +28,16 @@
                 <div class="fieldDescription">范围 1 - 120，建议 5 - 15。</div>
             </div>
 
+            <div class="checkboxContainer checkboxContainer-withDescription">
+                <label>
+                    <input is="emby-checkbox" type="checkbox" id="chkSkipWhenPlaying" />
+                    <span>有人在播时跳过本次清理 (Skip when playing)</span>
+                </label>
+                <div class="fieldDescription checkboxFieldDescription">
+                    检测到任何会话正在播放时跳过本次定时清理，避免 GC STW 引起播放卡顿。手动「立即清理」不受此设置影响。
+                </div>
+            </div>
+
             <div style="margin-top:1.5em;">
                 <button is="emby-button" type="submit" class="raised button-submit block">
                     <span>保存 (Save)</span>
@@ -52,11 +62,15 @@
                 <div style="opacity:.7;">使用方法:</div>
                 <div><span class="mc-last-method">--</span></div>
             </div>
-            <div style="margin-top:1em;">
+            <div style="margin-top:1em;display:flex;gap:.6em;flex-wrap:wrap;">
                 <button is="emby-button" type="button" class="raised mc-btn-refresh">
                     <span>刷新 (Refresh)</span>
                 </button>
+                <button is="emby-button" type="button" class="raised button-submit mc-btn-cleanup-now">
+                    <span>立即清理一次 (Cleanup Now)</span>
+                </button>
             </div>
+            <div class="mc-cleanup-msg" style="margin-top:.6em;opacity:.85;font-size:.9em;"></div>
         </div>
     </div>
 </div>

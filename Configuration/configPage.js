@@ -7,10 +7,12 @@ define([], function () {
         function loadConfig() {
             var chk = view.querySelector('#chkEnableMemoryCleanup');
             var txt = view.querySelector('#txtIntervalMinutes');
+            var chkSkip = view.querySelector('#chkSkipWhenPlaying');
             if (!chk || !txt) { return; }
             ApiClient.getPluginConfiguration(PluginId).then(function (config) {
                 chk.checked = !!config.EnableMemoryCleanup;
                 txt.value = config.MemoryCleanupIntervalMinutes || 30;
+                if (chkSkip) { chkSkip.checked = config.SkipWhenPlaying !== false; }
             });
         }
 
@@ -21,6 +23,8 @@ define([], function () {
                 if (isNaN(v) || v < 1) v = 1;
                 if (v > 120) v = 120;
                 config.MemoryCleanupIntervalMinutes = v;
+                var chkSkip = view.querySelector('#chkSkipWhenPlaying');
+                config.SkipWhenPlaying = chkSkip ? !!chkSkip.checked : true;
                 ApiClient.updatePluginConfiguration(PluginId, config).then(function (r) {
                     Dashboard.processPluginConfigurationUpdateResult(r);
                 });
@@ -70,6 +74,32 @@ define([], function () {
         var btnRefresh = view.querySelector('.mc-btn-refresh');
         if (btnRefresh) {
             btnRefresh.addEventListener('click', loadStats);
+        }
+
+        var btnCleanupNow = view.querySelector('.mc-btn-cleanup-now');
+        var msgEl = view.querySelector('.mc-cleanup-msg');
+        if (btnCleanupNow) {
+            btnCleanupNow.addEventListener('click', function () {
+                if (msgEl) { msgEl.textContent = '正在清理...'; }
+                btnCleanupNow.disabled = true;
+                var url = ApiClient.getUrl('Plugins/MemoryCleaner/CleanupNow');
+                ApiClient.ajax({ type: 'POST', url: url, dataType: 'json' }).then(function (r) {
+                    if (msgEl) {
+                        msgEl.textContent = (r && r.Message) ? r.Message : '完成';
+                        msgEl.style.color = (r && r.Success) ? '' : 'orange';
+                    }
+                    loadStats();
+                }, function () {
+                    if (msgEl) {
+                        msgEl.textContent = '请求失败';
+                        msgEl.style.color = 'orange';
+                    }
+                }).then(function () {
+                    btnCleanupNow.disabled = false;
+                }, function () {
+                    btnCleanupNow.disabled = false;
+                });
+            });
         }
     };
 });

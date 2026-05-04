@@ -9,6 +9,14 @@
     "imageUrl": "https://raw.githubusercontent.com/Townley9288/EmbyMemoryCleaner/main/Images/thumb.png",
     "versions": [
       {
+        "version": "1.0.2.1",
+        "changelog": "Added Cleanup Now button. Added Skip When Playing option (default ON) to avoid GC stutter during playback.",
+        "targetAbi": "4.9.0.0",
+        "sourceUrl": "https://github.com/Townley9288/EmbyMemoryCleaner/releases/download/v1.0.2.1/EmbyMemoryCleaner.dll",
+        "checksum": "e9bd860e009aa012e914cde79b967a79",
+        "timestamp": "2026-05-04T23:30:00Z"
+      },
+      {
         "version": "1.0.2.0",
         "changelog": "Added auto-update scheduled task. Checks manifest.json daily and replaces DLL when newer version found.",
         "targetAbi": "4.9.0.0",

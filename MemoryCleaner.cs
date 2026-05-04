@@ -1,8 +1,10 @@
 using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Runtime;
 using System.Runtime.InteropServices;
 using System.Threading;
+using MediaBrowser.Controller.Session;
 using MediaBrowser.Model.Logging;
 
 namespace EmbyMemoryCleaner
@@ -21,6 +23,10 @@ namespace EmbyMemoryCleaner
         private Timer _timer;
         private int _running;
         private bool _disposed;
+        private bool _skipWhenPlaying = true;
+
+        // ServerEntryPoint 注入；OnTick 时按需查询活跃会话
+        public static ISessionManager SessionManager { get; set; }
 
         private static readonly TimeSpan MinManualInterval = TimeSpan.FromSeconds(60);
         private long _lastTickTicks;
@@ -52,7 +58,7 @@ namespace EmbyMemoryCleaner
             _intervalMinutes = intervalMinutes;
         }
 
-        public static void ApplySettings(ILogger logger, bool enabled, int intervalMinutes)
+        public static void ApplySettings(ILogger logger, bool enabled, int intervalMinutes, bool skipWhenPlaying = true)
         {
             if (intervalMinutes < 1) intervalMinutes = 1;
             if (intervalMinutes > 120) intervalMinutes = 120;
@@ -70,11 +76,14 @@ namespace EmbyMemoryCleaner
                 else if (_instance == null)
                 {
                     _instance = new MemoryCleaner(logger, intervalMinutes);
+                    _instance._skipWhenPlaying = skipWhenPlaying;
                     _instance.Start();
                 }
-                else if (_instance._intervalMinutes != intervalMinutes)
+                else
                 {
-                    _instance.Reschedule(intervalMinutes);
+                    _instance._skipWhenPlaying = skipWhenPlaying;
+                    if (_instance._intervalMinutes != intervalMinutes)
+                        _instance.Reschedule(intervalMinutes);
                 }
             }
         }
@@ -149,74 +158,61 @@ namespace EmbyMemoryCleaner
 
         public void CleanupNow() => OnTick(null);
 
+        /// <summary>
+        /// 立即执行一次清理并返回结果（供手动触发使用）。
+        /// 即使配置里 SkipWhenPlaying=true，手动触发也会强制执行（用户已显式知情）。
+        /// </summary>
+        public CleanupResult CleanupNowForce()
+        {
+            if (Interlocked.Exchange(ref _running, 1) == 1)
+                return new CleanupResult { Skipped = true, SkipReason = "另一个清理正在进行中" };
+
+            try
+            {
+                return DoCleanup();
+            }
+            catch (Exception ex)
+            {
+                _logger.Warn("MemoryCleaner manual cleanup failed: " + ex.Message, Array.Empty<object>());
+                return new CleanupResult { Skipped = true, SkipReason = "清理失败：" + ex.Message };
+            }
+            finally
+            {
+                Interlocked.Exchange(ref _lastTickTicks, DateTime.UtcNow.Ticks);
+                Interlocked.Exchange(ref _running, 0);
+            }
+        }
+
+        private static int CountActivePlaybackSessions()
+        {
+            try
+            {
+                var sm = SessionManager;
+                if (sm == null) return 0;
+                return sm.Sessions.Count(s => s != null && s.NowPlayingItem != null);
+            }
+            catch
+            {
+                return 0;
+            }
+        }
+
         private void OnTick(object state)
         {
             if (Interlocked.Exchange(ref _running, 1) == 1) return;
 
             try
             {
-                long managedBefore = GC.GetTotalMemory(forceFullCollection: false);
-                long rssBefore = 0L;
-                try
+                if (_skipWhenPlaying)
                 {
-                    using var process = Process.GetCurrentProcess();
-                    rssBefore = process.WorkingSet64;
-                }
-                catch { }
-
-                try
-                {
-                    GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
-                }
-                catch { }
-
-                GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, blocking: true, compacting: true);
-                GC.WaitForPendingFinalizers();
-                GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, blocking: true, compacting: true);
-
-                long rssAfter = rssBefore;
-                string method = "none";
-
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                {
-                    try
+                    int active = CountActivePlaybackSessions();
+                    if (active > 0)
                     {
-                        if (SetProcessWorkingSetSize(GetCurrentProcess(), (IntPtr)(-1), (IntPtr)(-1)))
-                            method = "SetProcessWorkingSetSize";
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.Debug("SetProcessWorkingSetSize failed: " + ex.Message, Array.Empty<object>());
+                        _logger.Info($"MemoryCleaner: skip cleanup - {active} active playback session(s).", Array.Empty<object>());
+                        return;
                     }
                 }
-                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && TryMallocTrim())
-                {
-                    method = "malloc_trim";
-                }
-
-                long managedAfter = GC.GetTotalMemory(forceFullCollection: false);
-                try
-                {
-                    using var process2 = Process.GetCurrentProcess();
-                    rssAfter = process2.WorkingSet64;
-                }
-                catch { }
-
-                long managedFreedMb = (managedBefore - managedAfter) / 1024 / 1024;
-                long rssFreedMb = (rssBefore - rssAfter) / 1024 / 1024;
-                long managedNowMb = managedAfter / 1024 / 1024;
-                long rssNowMb = rssAfter / 1024 / 1024;
-
-                LastManagedNowMb = managedNowMb;
-                LastRssNowMb = rssNowMb;
-                LastManagedFreedMb = managedFreedMb;
-                LastRssFreedMb = rssFreedMb;
-                LastMethod = method;
-                LastCleanupTimeUtc = DateTime.UtcNow;
-
-                _logger.Info(
-                    $"MemoryCleaner [{method}]: Managed {managedNowMb} MB (freed {managedFreedMb} MB), RSS {rssNowMb} MB (freed {rssFreedMb} MB)",
-                    Array.Empty<object>());
+                DoCleanup();
             }
             catch (Exception ex)
             {
@@ -227,6 +223,82 @@ namespace EmbyMemoryCleaner
                 Interlocked.Exchange(ref _lastTickTicks, DateTime.UtcNow.Ticks);
                 Interlocked.Exchange(ref _running, 0);
             }
+        }
+
+        private CleanupResult DoCleanup()
+        {
+            long managedBefore = GC.GetTotalMemory(forceFullCollection: false);
+            long rssBefore = 0L;
+            try
+            {
+                using var process = Process.GetCurrentProcess();
+                rssBefore = process.WorkingSet64;
+            }
+            catch { }
+
+            try
+            {
+                GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
+            }
+            catch { }
+
+            GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, blocking: true, compacting: true);
+            GC.WaitForPendingFinalizers();
+            GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, blocking: true, compacting: true);
+
+            long rssAfter = rssBefore;
+            string method = "none";
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                try
+                {
+                    if (SetProcessWorkingSetSize(GetCurrentProcess(), (IntPtr)(-1), (IntPtr)(-1)))
+                        method = "SetProcessWorkingSetSize";
+                }
+                catch (Exception ex)
+                {
+                    _logger.Debug("SetProcessWorkingSetSize failed: " + ex.Message, Array.Empty<object>());
+                }
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && TryMallocTrim())
+            {
+                method = "malloc_trim";
+            }
+
+            long managedAfter = GC.GetTotalMemory(forceFullCollection: false);
+            try
+            {
+                using var process2 = Process.GetCurrentProcess();
+                rssAfter = process2.WorkingSet64;
+            }
+            catch { }
+
+            long managedFreedMb = (managedBefore - managedAfter) / 1024 / 1024;
+            long rssFreedMb = (rssBefore - rssAfter) / 1024 / 1024;
+            long managedNowMb = managedAfter / 1024 / 1024;
+            long rssNowMb = rssAfter / 1024 / 1024;
+
+            LastManagedNowMb = managedNowMb;
+            LastRssNowMb = rssNowMb;
+            LastManagedFreedMb = managedFreedMb;
+            LastRssFreedMb = rssFreedMb;
+            LastMethod = method;
+            LastCleanupTimeUtc = DateTime.UtcNow;
+
+            _logger.Info(
+                $"MemoryCleaner [{method}]: Managed {managedNowMb} MB (freed {managedFreedMb} MB), RSS {rssNowMb} MB (freed {rssFreedMb} MB)",
+                Array.Empty<object>());
+
+            return new CleanupResult
+            {
+                Skipped = false,
+                ManagedFreedMb = managedFreedMb,
+                RssFreedMb = rssFreedMb,
+                ManagedNowMb = managedNowMb,
+                RssNowMb = rssNowMb,
+                Method = method
+            };
         }
 
         private bool TryMallocTrim()
@@ -271,5 +343,16 @@ namespace EmbyMemoryCleaner
                 _disposed = true;
             }
         }
+    }
+
+    public class CleanupResult
+    {
+        public bool Skipped { get; set; }
+        public string SkipReason { get; set; }
+        public long ManagedFreedMb { get; set; }
+        public long RssFreedMb { get; set; }
+        public long ManagedNowMb { get; set; }
+        public long RssNowMb { get; set; }
+        public string Method { get; set; }
     }
 }

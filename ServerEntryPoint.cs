@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using MediaBrowser.Controller.Plugins;
+using MediaBrowser.Controller.Session;
 using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Plugins;
 
@@ -14,9 +15,10 @@ namespace EmbyMemoryCleaner
     {
         private readonly ILogger _logger;
 
-        public ServerEntryPoint(ILogManager logManager)
+        public ServerEntryPoint(ILogManager logManager, ISessionManager sessionManager)
         {
             _logger = logManager.GetLogger("MemoryCleaner");
+            MemoryCleaner.SessionManager = sessionManager;
         }
 
         public void Run()
@@ -24,7 +26,7 @@ namespace EmbyMemoryCleaner
             try
             {
                 var cfg = Plugin.Instance?.Configuration ?? new PluginConfiguration();
-                MemoryCleaner.ApplySettings(_logger, cfg.EnableMemoryCleanup, cfg.MemoryCleanupIntervalMinutes);
+                MemoryCleaner.ApplySettings(_logger, cfg.EnableMemoryCleanup, cfg.MemoryCleanupIntervalMinutes, cfg.SkipWhenPlaying);
 
                 Plugin.ConfigurationUpdated += OnConfigurationChanged;
             }
@@ -38,7 +40,7 @@ namespace EmbyMemoryCleaner
         {
             try
             {
-                MemoryCleaner.ApplySettings(_logger, cfg.EnableMemoryCleanup, cfg.MemoryCleanupIntervalMinutes);
+                MemoryCleaner.ApplySettings(_logger, cfg.EnableMemoryCleanup, cfg.MemoryCleanupIntervalMinutes, cfg.SkipWhenPlaying);
             }
             catch (Exception ex)
             {
