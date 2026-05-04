@@ -9,6 +9,14 @@
     "imageUrl": "https://raw.githubusercontent.com/Townley9288/EmbyMemoryCleaner/main/Images/thumb.png",
     "versions": [
       {
+        "version": "1.0.3.5",
+        "changelog": "更新插件封面图。",
+        "targetAbi": "4.9.0.0",
+        "sourceUrl": "https://github.com/Townley9288/EmbyMemoryCleaner/releases/download/v1.0.3.5/EmbyMemoryCleaner.dll",
+        "checksum": "d5c2c1690213d30680197fcfda1d93d6",
+        "timestamp": "2026-05-05T01:50:00Z"
+      },
+      {
         "version": "1.0.3.4",
         "changelog": "更新任务执行时通过 ISessionManager.SendMessageCommand 给所有在线管理员推送 toast 提示（已是最新 / 发现新版本 / 更新完成请重启 / 更新失败）。",
         "targetAbi": "4.9.0.0",
