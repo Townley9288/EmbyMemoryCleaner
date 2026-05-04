@@ -4,15 +4,15 @@
     "name": "Memory Cleaner",
     "description": "Periodically forces full GC + LOH compaction + working-set trim to mitigate Emby long-running memory bloat. 周期性触发完整 GC + LOH 压缩 + 工作集释放，缓解 Emby 长时间运行导致的内存膨胀。",
     "overview": "Lightweight standalone plugin (~460KB). Compatible with StrmAssistant. Configurable interval (1-120 min, default 30). Status panel shows current memory + last cleanup stats.",
-    "owner": "REPLACE_WITH_YOUR_GITHUB_USERNAME",
+    "owner": "Townley9288",
     "category": "General",
-    "imageUrl": "https://raw.githubusercontent.com/REPLACE_WITH_YOUR_GITHUB_USERNAME/EmbyMemoryCleaner/main/Images/thumb.png",
+    "imageUrl": "https://raw.githubusercontent.com/Townley9288/EmbyMemoryCleaner/main/Images/thumb.png",
     "versions": [
       {
         "version": "1.0.1.0",
         "changelog": "Default interval changed to 30 minutes. Added runtime status panel (current memory + last cleanup stats).",
         "targetAbi": "4.9.0.0",
-        "sourceUrl": "https://github.com/REPLACE_WITH_YOUR_GITHUB_USERNAME/EmbyMemoryCleaner/releases/download/v1.0.1.0/EmbyMemoryCleaner.dll",
+        "sourceUrl": "https://github.com/Townley9288/EmbyMemoryCleaner/releases/download/v1.0.1.0/EmbyMemoryCleaner.dll",
         "checksum": "6bf846b03ace35c152e68cd8ffbfa7e3",
         "timestamp": "2026-05-04T22:00:00Z"
       }
