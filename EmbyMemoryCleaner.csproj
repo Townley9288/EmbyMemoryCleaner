@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
@@ -12,9 +12,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- 这三个 DLL 需要从你自己的 Emby Server 安装目录复制到 refs/ 文件夹下：
-         Windows: C:\Users\<你>\AppData\Roaming\Emby-Server\system\
-         Docker:  /system/  里的同名文件
+    <!-- 杩欎笁涓?DLL 闇€瑕佷粠浣犺嚜宸辩殑 Emby Server 瀹夎鐩綍澶嶅埗鍒?refs/ 鏂囦欢澶逛笅锛?
+         Windows: C:\Users\<浣?\AppData\Roaming\Emby-Server\system\
+         Docker:  /system/  閲岀殑鍚屽悕鏂囦欢
          Linux:   /opt/emby-server/system/
     -->
     <Reference Include="MediaBrowser.Common">

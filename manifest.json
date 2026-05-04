@@ -2,15 +2,23 @@
   {
     "guid": "c1f20f3a-7d2c-4d5e-9b21-2a8f0e6e9c11",
     "name": "Memory Cleaner",
-    "description": "Periodically forces full GC + LOH compaction + working-set trim to mitigate Emby long-running memory bloat. 周期性触发完整 GC + LOH 压缩 + 工作集释放，缓解 Emby 长时间运行导致的内存膨胀。",
-    "overview": "Lightweight standalone plugin (~460KB). Compatible with StrmAssistant. Configurable interval (1-120 min, default 30). Status panel shows current memory + last cleanup stats.",
+    "description": "Periodically forces full GC + LOH compaction + working-set trim to mitigate Emby long-running memory bloat.",
+    "overview": "Lightweight standalone plugin. Compatible with StrmAssistant. Configurable interval (1-120 min, default 30). Status panel + auto-update task included.",
     "owner": "Townley9288",
     "category": "General",
     "imageUrl": "https://raw.githubusercontent.com/Townley9288/EmbyMemoryCleaner/main/Images/thumb.png",
     "versions": [
       {
+        "version": "1.0.2.0",
+        "changelog": "Added auto-update scheduled task. Checks manifest.json daily and replaces DLL when newer version found.",
+        "targetAbi": "4.9.0.0",
+        "sourceUrl": "https://github.com/Townley9288/EmbyMemoryCleaner/releases/download/v1.0.2.0/EmbyMemoryCleaner.dll",
+        "checksum": "63cb9183f9b0c5ae4522cb93cda85001",
+        "timestamp": "2026-05-04T23:00:00Z"
+      },
+      {
         "version": "1.0.1.0",
-        "changelog": "Default interval changed to 30 minutes. Added runtime status panel (current memory + last cleanup stats).",
+        "changelog": "Default interval changed to 30 minutes. Added runtime status panel.",
         "targetAbi": "4.9.0.0",
         "sourceUrl": "https://github.com/Townley9288/EmbyMemoryCleaner/releases/download/v1.0.1.0/EmbyMemoryCleaner.dll",
         "checksum": "6bf846b03ace35c152e68cd8ffbfa7e3",
