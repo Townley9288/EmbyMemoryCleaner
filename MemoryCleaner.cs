@@ -24,6 +24,8 @@ namespace EmbyMemoryCleaner
         private int _running;
         private bool _disposed;
         private bool _skipWhenPlaying = true;
+        private bool _skipOnlyWhenTranscoding;
+        private int _rssThresholdMb;
 
         // ServerEntryPoint 注入；OnTick 时按需查询活跃会话
         public static ISessionManager SessionManager { get; set; }
@@ -58,10 +60,11 @@ namespace EmbyMemoryCleaner
             _intervalMinutes = intervalMinutes;
         }
 
-        public static void ApplySettings(ILogger logger, bool enabled, int intervalMinutes, bool skipWhenPlaying = true)
+        public static void ApplySettings(ILogger logger, bool enabled, int intervalMinutes, bool skipWhenPlaying = true, bool skipOnlyWhenTranscoding = false, int rssThresholdMb = 0)
         {
             if (intervalMinutes < 1) intervalMinutes = 1;
             if (intervalMinutes > 120) intervalMinutes = 120;
+            if (rssThresholdMb < 0) rssThresholdMb = 0;
 
             lock (_lock)
             {
@@ -77,11 +80,15 @@ namespace EmbyMemoryCleaner
                 {
                     _instance = new MemoryCleaner(logger, intervalMinutes);
                     _instance._skipWhenPlaying = skipWhenPlaying;
+                    _instance._skipOnlyWhenTranscoding = skipOnlyWhenTranscoding;
+                    _instance._rssThresholdMb = rssThresholdMb;
                     _instance.Start();
                 }
                 else
                 {
                     _instance._skipWhenPlaying = skipWhenPlaying;
+                    _instance._skipOnlyWhenTranscoding = skipOnlyWhenTranscoding;
+                    _instance._rssThresholdMb = rssThresholdMb;
                     if (_instance._intervalMinutes != intervalMinutes)
                         _instance.Reschedule(intervalMinutes);
                 }
@@ -183,13 +190,30 @@ namespace EmbyMemoryCleaner
             }
         }
 
-        private static int CountActivePlaybackSessions()
+        private static int CountActivePlaybackSessions(bool transcodingOnly)
         {
             try
             {
                 var sm = SessionManager;
                 if (sm == null) return 0;
+                if (transcodingOnly)
+                {
+                    return sm.Sessions.Count(s => s != null && s.NowPlayingItem != null && s.TranscodingInfo != null);
+                }
                 return sm.Sessions.Count(s => s != null && s.NowPlayingItem != null);
+            }
+            catch
+            {
+                return 0;
+            }
+        }
+
+        private static long GetCurrentRssMb()
+        {
+            try
+            {
+                using var p = Process.GetCurrentProcess();
+                return p.WorkingSet64 / 1024 / 1024;
             }
             catch
             {
@@ -203,12 +227,23 @@ namespace EmbyMemoryCleaner
 
             try
             {
+                if (_rssThresholdMb > 0)
+                {
+                    long rssMb = GetCurrentRssMb();
+                    if (rssMb > 0 && rssMb < _rssThresholdMb)
+                    {
+                        _logger.Info($"MemoryCleaner: skip cleanup - RSS {rssMb} MB below threshold {_rssThresholdMb} MB.", Array.Empty<object>());
+                        return;
+                    }
+                }
+
                 if (_skipWhenPlaying)
                 {
-                    int active = CountActivePlaybackSessions();
+                    int active = CountActivePlaybackSessions(_skipOnlyWhenTranscoding);
                     if (active > 0)
                     {
-                        _logger.Info($"MemoryCleaner: skip cleanup - {active} active playback session(s).", Array.Empty<object>());
+                        var what = _skipOnlyWhenTranscoding ? "transcoding" : "active playback";
+                        _logger.Info($"MemoryCleaner: skip cleanup - {active} {what} session(s).", Array.Empty<object>());
                         return;
                     }
                 }

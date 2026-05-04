@@ -8,11 +8,15 @@ define([], function () {
             var chk = view.querySelector('#chkEnableMemoryCleanup');
             var txt = view.querySelector('#txtIntervalMinutes');
             var chkSkip = view.querySelector('#chkSkipWhenPlaying');
+            var chkTrans = view.querySelector('#chkSkipOnlyWhenTranscoding');
+            var txtRss = view.querySelector('#txtRssThresholdMb');
             if (!chk || !txt) { return; }
             ApiClient.getPluginConfiguration(PluginId).then(function (config) {
                 chk.checked = !!config.EnableMemoryCleanup;
                 txt.value = config.MemoryCleanupIntervalMinutes || 30;
                 if (chkSkip) { chkSkip.checked = config.SkipWhenPlaying !== false; }
+                if (chkTrans) { chkTrans.checked = !!config.SkipOnlyWhenTranscoding; }
+                if (txtRss) { txtRss.value = config.RssThresholdMb || 0; }
             });
         }
 
@@ -25,6 +29,13 @@ define([], function () {
                 config.MemoryCleanupIntervalMinutes = v;
                 var chkSkip = view.querySelector('#chkSkipWhenPlaying');
                 config.SkipWhenPlaying = chkSkip ? !!chkSkip.checked : true;
+                var chkTrans = view.querySelector('#chkSkipOnlyWhenTranscoding');
+                config.SkipOnlyWhenTranscoding = chkTrans ? !!chkTrans.checked : false;
+                var txtRss = view.querySelector('#txtRssThresholdMb');
+                var rssV = txtRss ? parseInt(txtRss.value, 10) : 0;
+                if (isNaN(rssV) || rssV < 0) rssV = 0;
+                if (rssV > 65536) rssV = 65536;
+                config.RssThresholdMb = rssV;
                 ApiClient.updatePluginConfiguration(PluginId, config).then(function (r) {
                     Dashboard.processPluginConfigurationUpdateResult(r);
                 });

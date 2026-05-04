@@ -38,6 +38,21 @@
                 </div>
             </div>
 
+            <div class="checkboxContainer checkboxContainer-withDescription">
+                <label>
+                    <input is="emby-checkbox" type="checkbox" id="chkSkipOnlyWhenTranscoding" />
+                    <span>仅在转码会话时跳过 (Skip only when transcoding)</span>
+                </label>
+                <div class="fieldDescription checkboxFieldDescription">
+                    勾选后，「在播跳过」只在存在转码会话时生效；直出/直传播放仍会执行清理（GC 极短暂，通常无感）。
+                </div>
+            </div>
+
+            <div class="inputContainer">
+                <input is="emby-input" type="number" id="txtRssThresholdMb" min="0" max="65536" step="64" label="RSS 阈值（MB），低于阈值时跳过清理 / Skip if RSS below threshold (MB)" />
+                <div class="fieldDescription">填 0 表示不启用阈值。例如填 2048 表示进程 RSS 超过 2 GB 才执行 GC，避免无意义的清理。</div>
+            </div>
+
             <div style="margin-top:1.5em;">
                 <button is="emby-button" type="submit" class="raised button-submit block">
                     <span>保存 (Save)</span>

@@ -9,6 +9,14 @@
     "imageUrl": "https://raw.githubusercontent.com/Townley9288/EmbyMemoryCleaner/main/Images/thumb.png",
     "versions": [
       {
+        "version": "1.0.3.0",
+        "changelog": "新增 RSS 阈值（仅当进程占用超过阈值时才执行清理）；新增「仅在转码会话时跳过」开关（直出/直传不再跳过）。",
+        "targetAbi": "4.9.0.0",
+        "sourceUrl": "https://github.com/Townley9288/EmbyMemoryCleaner/releases/download/v1.0.3.0/EmbyMemoryCleaner.dll",
+        "checksum": "25111435ce3ee23066599f064120c38d",
+        "timestamp": "2026-05-05T00:10:00Z"
+      },
+      {
         "version": "1.0.2.2",
         "changelog": "Added update notifications: Memory Cleaner now writes a message to Emby Activity log when the auto-update task starts, finishes (with a restart reminder), or fails.",
         "targetAbi": "4.9.0.0",

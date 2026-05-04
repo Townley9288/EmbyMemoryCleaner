@@ -26,7 +26,7 @@ namespace EmbyMemoryCleaner
             try
             {
                 var cfg = Plugin.Instance?.Configuration ?? new PluginConfiguration();
-                MemoryCleaner.ApplySettings(_logger, cfg.EnableMemoryCleanup, cfg.MemoryCleanupIntervalMinutes, cfg.SkipWhenPlaying);
+                MemoryCleaner.ApplySettings(_logger, cfg.EnableMemoryCleanup, cfg.MemoryCleanupIntervalMinutes, cfg.SkipWhenPlaying, cfg.SkipOnlyWhenTranscoding, cfg.RssThresholdMb);
 
                 Plugin.ConfigurationUpdated += OnConfigurationChanged;
             }
@@ -40,7 +40,7 @@ namespace EmbyMemoryCleaner
         {
             try
             {
-                MemoryCleaner.ApplySettings(_logger, cfg.EnableMemoryCleanup, cfg.MemoryCleanupIntervalMinutes, cfg.SkipWhenPlaying);
+                MemoryCleaner.ApplySettings(_logger, cfg.EnableMemoryCleanup, cfg.MemoryCleanupIntervalMinutes, cfg.SkipWhenPlaying, cfg.SkipOnlyWhenTranscoding, cfg.RssThresholdMb);
             }
             catch (Exception ex)
             {
