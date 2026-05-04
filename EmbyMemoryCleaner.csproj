@@ -4,8 +4,8 @@
     <TargetFramework>net6.0</TargetFramework>
     <AssemblyName>EmbyMemoryCleaner</AssemblyName>
     <RootNamespace>EmbyMemoryCleaner</RootNamespace>
-    <Version>1.0.3.3</Version>
-    <FileVersion>1.0.3.3</FileVersion>
+    <Version>1.0.3.4</Version>
+    <FileVersion>1.0.3.4</FileVersion>
     <Nullable>disable</Nullable>
     <LangVersion>latest</LangVersion>
     <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>

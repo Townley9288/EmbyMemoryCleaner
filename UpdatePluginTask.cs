@@ -8,8 +8,10 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using MediaBrowser.Common;
+using MediaBrowser.Controller.Session;
 using MediaBrowser.Model.Activity;
 using MediaBrowser.Model.Logging;
+using MediaBrowser.Model.Session;
 using MediaBrowser.Model.Tasks;
 namespace EmbyMemoryCleaner
 {
@@ -27,12 +29,14 @@ namespace EmbyMemoryCleaner
         private readonly ILogger _logger;
         private readonly IActivityManager _activityManager;
         private readonly IApplicationHost _applicationHost;
+        private readonly ISessionManager _sessionManager;
 
-        public UpdatePluginTask(ILogManager logManager, IActivityManager activityManager, IApplicationHost applicationHost)
+        public UpdatePluginTask(ILogManager logManager, IActivityManager activityManager, IApplicationHost applicationHost, ISessionManager sessionManager)
         {
             _logger = logManager.GetLogger("MemoryCleaner.UpdatePluginTask");
             _activityManager = activityManager;
             _applicationHost = applicationHost;
+            _sessionManager = sessionManager;
         }
 
         public string Name => "Update Memory Cleaner";
@@ -122,6 +126,7 @@ namespace EmbyMemoryCleaner
                         _logger.Info($"Already up-to-date (latest {latest} <= current {current}).");
                         WriteActivity("Memory Cleaner: 已是最新版本",
                             $"当前 v{current}，未发现新版本。", LogSeverity.Info);
+                        ToastAdmins($"[Memory Cleaner] 已是最新 v{current}");
                         progress?.Report(100);
                         return;
                     }
@@ -129,6 +134,7 @@ namespace EmbyMemoryCleaner
                     _logger.Info($"New version detected: {latest} (current {current}). Downloading from {dllUrl}");
                     WriteActivity("Memory Cleaner: 发现新版本",
                         $"v{current} → v{latest}，正在下载...", LogSeverity.Info);
+                    ToastAdmins($"[Memory Cleaner] 发现新版本 v{latest}，正在下载");
 
                     progress?.Report(60);
 
@@ -166,6 +172,7 @@ namespace EmbyMemoryCleaner
                     _logger.Info($"Plugin updated to {latest}. RESTART Emby Server to load the new version.");
                     WriteActivity("Memory Cleaner: 更新完成，请重启 Emby Server",
                         $"已下载 v{latest} 到插件目录，重启 Emby Server 后生效。", LogSeverity.Warn);
+                    ToastAdmins($"[Memory Cleaner] 更新到 v{latest}，请重启 Emby Server 生效", 5000);
                     try { _applicationHost?.NotifyPendingRestart(); } catch (Exception nex) { _logger.Debug("NotifyPendingRestart failed: " + nex.Message); }
                     progress?.Report(100);
                 }
@@ -179,6 +186,7 @@ namespace EmbyMemoryCleaner
                 _logger.ErrorException("UpdatePluginTask failed", ex);
                 WriteActivity("Memory Cleaner: 更新失败",
                     "请查看 Emby 日志了解详情：" + ex.Message, LogSeverity.Error);
+                ToastAdmins("[Memory Cleaner] 更新失败：" + ex.Message, 5000);
                 throw;
             }
         }
@@ -201,6 +209,25 @@ namespace EmbyMemoryCleaner
             catch (Exception ex)
             {
                 _logger.Debug("WriteActivity failed: " + ex.Message);
+            }
+        }
+
+        private void ToastAdmins(string text, int timeoutMs = 3000)
+        {
+            try
+            {
+                if (_sessionManager == null) return;
+                var cmd = new MessageCommand { Header = "Memory Cleaner", Text = text, TimeoutMs = timeoutMs };
+                foreach (var s in _sessionManager.Sessions)
+                {
+                    if (s == null || string.IsNullOrEmpty(s.Id)) continue;
+                    try { _ = _sessionManager.SendMessageCommand(null, s.Id, cmd, CancellationToken.None); }
+                    catch (Exception inner) { _logger.Debug("SendMessageCommand failed: " + inner.Message); }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Debug("ToastAdmins failed: " + ex.Message);
             }
         }
 
