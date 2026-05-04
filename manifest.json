@@ -9,6 +9,14 @@
     "imageUrl": "https://raw.githubusercontent.com/Townley9288/EmbyMemoryCleaner/main/Images/thumb.png",
     "versions": [
       {
+        "version": "1.0.2.2",
+        "changelog": "Added update notifications: Memory Cleaner now writes a message to Emby Activity log when the auto-update task starts, finishes (with a restart reminder), or fails.",
+        "targetAbi": "4.9.0.0",
+        "sourceUrl": "https://github.com/Townley9288/EmbyMemoryCleaner/releases/download/v1.0.2.2/EmbyMemoryCleaner.dll",
+        "checksum": "50690edcc7517a9231991bf02730fe09",
+        "timestamp": "2026-05-04T23:50:00Z"
+      },
+      {
         "version": "1.0.2.1",
         "changelog": "Added Cleanup Now button. Added Skip When Playing option (default ON) to avoid GC stutter during playback.",
         "targetAbi": "4.9.0.0",

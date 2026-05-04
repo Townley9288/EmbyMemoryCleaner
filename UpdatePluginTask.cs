@@ -7,9 +7,9 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using MediaBrowser.Controller.Notifications;
 using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Tasks;
-
 namespace EmbyMemoryCleaner
 {
     /// <summary>
@@ -24,10 +24,12 @@ namespace EmbyMemoryCleaner
             "https://raw.githubusercontent.com/Townley9288/EmbyMemoryCleaner/main/manifest.json";
 
         private readonly ILogger _logger;
+        private readonly INotificationManager _notificationManager;
 
-        public UpdatePluginTask(ILogManager logManager)
+        public UpdatePluginTask(ILogManager logManager, INotificationManager notificationManager)
         {
             _logger = logManager.GetLogger("MemoryCleaner.UpdatePluginTask");
+            _notificationManager = notificationManager;
         }
 
         public string Name => "Update Memory Cleaner";
@@ -115,11 +117,15 @@ namespace EmbyMemoryCleaner
                     if (latest <= current)
                     {
                         _logger.Info($"Already up-to-date (latest {latest} <= current {current}).");
+                        SendNotification("Memory Cleaner: 已是最新版本",
+                            $"当前 v{current}，未发现新版本。");
                         progress?.Report(100);
                         return;
                     }
 
                     _logger.Info($"New version detected: {latest} (current {current}). Downloading from {dllUrl}");
+                    SendNotification("Memory Cleaner: 发现新版本",
+                        $"v{current} → v{latest}，正在下载...");
 
                     progress?.Report(60);
 
@@ -155,6 +161,8 @@ namespace EmbyMemoryCleaner
                     }
 
                     _logger.Info($"Plugin updated to {latest}. RESTART Emby Server to load the new version.");
+                    SendNotification("Memory Cleaner: 更新完成，请重启 Emby Server",
+                        $"已下载 v{latest} 到插件目录，重启 Emby Server 后生效。");
                     progress?.Report(100);
                 }
             }
@@ -165,7 +173,27 @@ namespace EmbyMemoryCleaner
             catch (Exception ex)
             {
                 _logger.ErrorException("UpdatePluginTask failed", ex);
+                SendNotification("Memory Cleaner: 更新失败",
+                    "请查看 Emby 日志了解详情：" + ex.Message);
                 throw;
+            }
+        }
+
+        private void SendNotification(string title, string description)
+        {
+            try
+            {
+                if (_notificationManager == null) return;
+                _notificationManager.SendNotification(new Emby.Notifications.NotificationRequest
+                {
+                    Title = title,
+                    Description = description,
+                    Date = DateTimeOffset.UtcNow
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.Debug("SendNotification failed: " + ex.Message);
             }
         }
 
